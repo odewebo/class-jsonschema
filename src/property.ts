@@ -1,17 +1,21 @@
+import { JSONSchema4 } from 'json-schema'
 import {
   InvalidTypePropertyError,
   MissingPropertyArrayTypeError,
-  MissingReflectMetadataError
+  MissingReflectMetadataError,
+  UndeclaredSchemaPropertyError
 } from './errors'
 
-interface Props {
-  required: boolean
+type Props = Omit<JSONSchema4, 'type'> & {
+  required?: boolean
 }
 
-function property(props: Props): any
-function property(type?: any, props?: Props): any
+type ArrayProps = Pick<JSONSchema4, 'maxItems' | 'minItems' | 'uniqueItems'>
 
-function property(typeOrProps?: any, props?: Props) {
+function property(props: Props): any
+function property(type?: any, props?: Props, arrayProps?: ArrayProps): any
+
+function property(typeOrProps?: any, props?: Props, arrayProps?: ArrayProps) {
   let type: Function
 
   if (typeof typeOrProps === 'function') {
@@ -47,13 +51,21 @@ function property(typeOrProps?: any, props?: Props) {
       throw new InvalidTypePropertyError(target.constructor.name, name)
     }
 
-    if (props === undefined || props.required === true) {
+    if (
+      props === undefined ||
+      'required' in props === false ||
+      props.required === true
+    ) {
       target.__jsonSchemaRequired.push(name)
+    }
+
+    if (props && 'required' in props) {
+      delete props.required
     }
 
     target.__jsonSchemaProperties[name] =
       metadata.name === 'Array'
-        ? buildPropertyArray(type, props)
+        ? buildPropertyArray(type, props, arrayProps)
         : buildProperty(metadata, props)
   }
 }
@@ -65,41 +77,63 @@ function buildProperty(type: Function, props?: Props) {
 
   switch (type.name) {
     case 'Number':
-      return buildPropertyNumber()
+      return buildPropertyNumber(props)
     case 'String':
-      return buildPropertyString()
+      return buildPropertyString(props)
     case 'Boolean':
-      return buildPropertyBoolean()
+      return buildPropertyBoolean(props)
     default:
-      return buildCustomPropertyObject()
+      return buildCustomPropertyObject(type, props)
   }
 }
 
-function buildPropertyArray(type: Function, props?: Props) {
+function buildPropertyArray(
+  type: Function,
+  props?: Props,
+  arrayProps?: ArrayProps
+) {
   // console.log('buildPropertyArray', { type, props })
 
   return {
     type: 'array',
-    items: buildProperty(type, props)
+    items: buildProperty(type, props),
+    ...arrayProps
   }
 }
 
-function buildPropertyNumber() {
+function buildPropertyNumber(props?: Props) {
   return {
-    type: 'number'
+    type: 'number',
+    ...props
   }
 }
 
-function buildPropertyString() {
+function buildPropertyString(props?: Props) {
   return {
-    type: 'string'
+    type: 'string',
+    ...props
   }
 }
 
-function buildPropertyBoolean() {
+function buildPropertyBoolean(props?: Props) {
   return {
-    type: 'boolean'
+    type: 'boolean',
+    ...props
   }
 }
 
-function buildCustomPropertyObject() {}
+function buildCustomPropertyObject(type: Function, props?: Props) {
+  // must check if have $id, if have $id use $ref, else copy schema, else throw error
+
+  if ('__jsonSchema' in type.prototype === false) {
+    throw new UndeclaredSchemaPropertyError(`${type}`)
+  }
+
+  if ('$id' in type.prototype.__jsonSchema) {
+    return {
+      $ref: type.prototype.__jsonSchema.$id
+    }
+  }
+
+  return type.prototype.__jsonSchema
+}

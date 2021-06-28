@@ -6,7 +6,7 @@ import { expect } from 'chai'
 
 describe('index', () => {
   it('basic type schema', (done) => {
-    @schema
+    @schema()
     class Test {
       @property({ required: false })
       a?: number
@@ -18,7 +18,8 @@ describe('index', () => {
       c!: boolean
     }
 
-    expect(Test.prototype.__jsonSchema).to.deep.equal({
+    expect(Test.prototype.__jsonSchema).to.deep.contains({
+      type: 'object',
       required: ['b', 'c'],
       properties: {
         a: {
@@ -32,6 +33,140 @@ describe('index', () => {
         },
         c: {
           type: 'boolean'
+        }
+      }
+    })
+
+    done()
+  })
+
+  it('property schema test', (done) => {
+    @schema({ $id: 'Test', title: 'Test', description: 'Test Object' })
+    class Test {}
+
+    expect(Test.prototype.__jsonSchema).to.deep.contains({
+      type: 'object',
+      $id: 'Test',
+      title: 'Test',
+      description: 'Test Object'
+    })
+
+    done()
+  })
+
+  it('string property schema setting', (done) => {
+    @schema()
+    class Test {
+      @property({
+        minLength: 3,
+        maxLength: 5
+      })
+      a: string
+    }
+
+    expect(Test.prototype.__jsonSchema).to.deep.contains({
+      type: 'object',
+      required: ['a'],
+      properties: {
+        a: {
+          type: 'string',
+          minLength: 3,
+          maxLength: 5
+        }
+      }
+    })
+
+    done()
+  })
+
+  it('schema in schema', (done) => {
+    @schema()
+    class A {
+      @property()
+      a: string
+    }
+
+    @schema()
+    class B {
+      @property()
+      a: A
+
+      @property()
+      b: string
+    }
+
+    expect(B.prototype.__jsonSchema).to.deep.contains({
+      type: 'object',
+      required: ['a', 'b'],
+      properties: {
+        a: {
+          type: 'object',
+          required: ['a'],
+          properties: {
+            a: {
+              type: 'string'
+            }
+          }
+        },
+        b: {
+          type: 'string'
+        }
+      }
+    })
+
+    done()
+  })
+
+  it('schema ref schema', (done) => {
+    @schema({ $id: 'A#ref' })
+    class A {
+      @property()
+      a: string
+    }
+
+    @schema()
+    class B {
+      @property()
+      a: A
+
+      @property()
+      b: string
+    }
+
+    expect(B.prototype.__jsonSchema).to.deep.contains({
+      type: 'object',
+      required: ['a', 'b'],
+      properties: {
+        a: {
+          $ref: 'A#ref'
+        },
+        b: {
+          type: 'string'
+        }
+      }
+    })
+
+    done()
+  })
+
+  it('array rules', (done) => {
+    @schema()
+    class Test {
+      @property(Number, { minLength: 1 }, { minItems: 3 })
+      a: string[]
+    }
+
+    expect(Test.prototype.__jsonSchema).to.deep.contains({
+      required: ['a'],
+      type: 'object',
+      properties: {
+        a: {
+          type: 'array',
+          minItems: 3,
+          items: {
+            type: 'number',
+            minLength: 1
+          }
         }
       }
     })

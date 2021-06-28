@@ -17,3 +17,5 @@ export class InvalidTypePropertyError extends Error {
     super(`${className}.${propertyName} is Object, cannot reference this type`)
   }
 }
+
+export class UndeclaredSchemaPropertyError extends Error {}
