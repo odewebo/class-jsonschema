@@ -1,5 +1,5 @@
 import property from './property'
-import schema from './schema'
+import schema, { getById } from './schema'
 
 import 'reflect-metadata'
 import { expect } from 'chai'
@@ -170,6 +170,82 @@ describe('index', () => {
         }
       }
     })
+
+    done()
+  })
+
+  it('extended class', (done) => {
+    @schema()
+    class A {
+      @property()
+      a: string
+    }
+
+    @schema()
+    class B extends A {
+      @property()
+      b: string
+    }
+
+    expect(B.prototype.__jsonSchema).to.deep.contains({
+      type: 'object',
+      required: ['a', 'b'],
+      properties: {
+        a: {
+          type: 'string'
+        },
+        b: {
+          type: 'string'
+        }
+      }
+    })
+
+    done()
+  })
+
+  it('extend multiple class', (done) => {
+    @schema()
+    class A {
+      @property()
+      a: string
+    }
+
+    @schema()
+    class B extends A {
+      @property()
+      b: string
+    }
+
+    @schema()
+    class C extends B {
+      @property()
+      c: string
+    }
+
+    expect(C.prototype.__jsonSchema).to.deep.contains({
+      type: 'object',
+      required: ['a', 'b', 'c'],
+      properties: {
+        a: {
+          type: 'string'
+        },
+        b: {
+          type: 'string'
+        },
+        c: {
+          type: 'string'
+        }
+      }
+    })
+
+    done()
+  })
+
+  it('check registration', (done) => {
+    @schema({ $id: 'A#ref' })
+    class A {}
+
+    expect(A).to.be.equal(getById('A#ref'))
 
     done()
   })

@@ -19,3 +19,7 @@ export class InvalidTypePropertyError extends Error {
 }
 
 export class UndeclaredSchemaPropertyError extends Error {}
+
+export class AlreadyDeclaredIdError extends Error {}
+
+export class NotFoundSchemaError extends Error {}
