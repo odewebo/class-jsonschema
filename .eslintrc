@@ -1,5 +1,5 @@
 {
-  "extends": ["@odewebo/eslint-config-odewebo"],
+  "extends": ["@odewebo/eslint-config"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 12,
