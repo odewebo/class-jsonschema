@@ -29,22 +29,22 @@ export default function schema(props?: JSONSchema4Props) {
     if ('$id' in target.prototype.__jsonSchema) {
       // schemaId[$id]
       if (target.prototype.__jsonSchema.$id in schemaMap) {
-        if (
-          target.constructor !==
-          schemaMap[target.prototype.__jsonSchema.$id].constructor
-        ) {
+        if (target !== schemaMap[target.prototype.__jsonSchema.$id]) {
           throw new AlreadyDeclaredIdError(target.prototype.__jsonSchema.$id)
         }
       }
 
       schemaMap[target.prototype.__jsonSchema.$id] = target
     }
+
+    Object.seal(target.prototype.__jsonSchema)
+    // delete target.prototype.__jsonSchemaRequired
+    // delete target.prototype.__jsonSchemaProperties
   }
 }
 
 export function getById(id: string) {
   if (id in schemaMap === false) {
-    // console.log('not found')
     throw new NotFoundSchemaError(id)
   }
 

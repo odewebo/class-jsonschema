@@ -1,4 +1,5 @@
 import { JSONSchema4 } from 'json-schema'
+
 import {
   InvalidTypePropertyError,
   MissingPropertyArrayTypeError,
@@ -36,6 +37,7 @@ function property(typeOrProps?: any, props?: Props, arrayProps?: ArrayProps) {
     let metadata
 
     try {
+      // @ts-ignore
       metadata = Reflect.getMetadata('design:type', target, name)
     } catch (error) {
       if (error instanceof TypeError) {
