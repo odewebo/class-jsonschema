@@ -3,7 +3,7 @@ import schema, { getById } from './schema'
 
 import 'reflect-metadata'
 import { expect } from 'chai'
-import { AlreadyDeclaredIdError } from './errors'
+import { AlreadyDeclaredIdError, MissingPropertyArrayTypeError } from './errors'
 
 describe('index', () => {
   it('basic type schema', (done) => {
@@ -376,6 +376,38 @@ describe('index', () => {
         }
       }
     })
+
+    done()
+  })
+
+  it('declaring type of non array prop', (done) => {
+    @schema()
+    class Test6 {
+      @property(String)
+      p!: string
+    }
+
+    expect(Test6.prototype.__jsonSchema).to.deep.contains({
+      type: 'object',
+      required: ['p'],
+      properties: {
+        p: {
+          type: 'string'
+        }
+      }
+    })
+
+    done()
+  })
+
+  it('missing type declaration of array', (done) => {
+    expect(() => {
+      @schema()
+      class Test7 {
+        @property()
+        p!: string[]
+      }
+    }).to.throw(MissingPropertyArrayTypeError)
 
     done()
   })
